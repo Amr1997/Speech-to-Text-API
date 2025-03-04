@@ -3,8 +3,8 @@ version: '3.8'
 services:
   web:
     build: 
-      context: .
-      dockerfile: speach_text/Dockerfile
+      context: ./speach_text
+      dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./speach_text:/app
@@ -42,8 +42,8 @@ services:
 
   celery:
     build: 
-      context: .
-      dockerfile: speach_text/Dockerfile
+      context: ./speach_text
+      dockerfile: Dockerfile
     command: celery -A speach_text worker --loglevel=info
     volumes:
       - ./speach_text:/app

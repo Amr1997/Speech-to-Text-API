@@ -11,15 +11,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY speach_text/requirements.txt /app/
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entrypoint script
-COPY speach_text/docker-entrypoint.sh /app/docker-entrypoint.sh
+# Copy the entrypoint script and make it executable
+COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Copy project files
-COPY speach_text/ /app/
+COPY . /app/
 
 EXPOSE 8000
 

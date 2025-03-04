@@ -6,3 +6,4 @@ redis==5.0.1
 drf-yasg==1.21.7
 faster-whisper==0.10.0
 gunicorn==21.2.0
+django-cors-headers==4.0.0

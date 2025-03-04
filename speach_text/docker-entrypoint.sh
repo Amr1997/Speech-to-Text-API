@@ -25,4 +25,4 @@ fi
 mkdir -p /app/media
 
 # Execute the command provided as arguments
-exec "$@"
+exec "$@" 
