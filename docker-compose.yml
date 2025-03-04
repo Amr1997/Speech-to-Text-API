@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: speach_text/Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./speach_text:/app
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgres://postgres:0000@db:5432/stt_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=0000
+      - POSTGRES_DB=stt_db
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:6
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: 
+      context: .
+      dockerfile: speach_text/Dockerfile
+    command: celery -A speach_text worker --loglevel=info
+    volumes:
+      - ./speach_text:/app
+      - media_data:/app/media
+    depends_on:
+      - web
+      - redis
+    environment:
+      - DATABASE_URL=postgres://postgres:0000@db:5432/stt_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_data:
