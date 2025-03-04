@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.exceptions import ValidationError
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from .serializers import TranscriptionSerializer
 from .tasks import process_audio
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +12,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TranscribeView(APIView):
 
     parser_classes = (MultiPartParser, FormParser)
