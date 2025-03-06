@@ -1,29 +1,43 @@
 version: '3.8'
 
 services:
-  web:
+  stt_web:
     build: 
       context: ./speach_text
       dockerfile: Dockerfile
+    container_name: stt_web
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./speach_text:/app
       - media_data:/app/media
+      - model_cache:/app/models
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     depends_on:
-      - db
-      - redis
+      - stt_db
+      - stt_redis
     environment:
-      - DATABASE_URL=postgres://postgres:0000@db:5432/stt_db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgres://postgres:0000@stt_db:5432/stt_db
+      - CELERY_BROKER_URL=redis://stt_redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://stt_redis:6379/0
       - DJANGO_SUPERUSER_USERNAME=admin
       - DJANGO_SUPERUSER_PASSWORD=admin
       - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    restart: unless-stopped
+    shm_size: '2gb'
 
-  db:
-    image: postgres:13
+  stt_db:
+    image: postgres:13-alpine
+    container_name: stt_db
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
@@ -32,31 +46,48 @@ services:
       - POSTGRES_DB=stt_db
     ports:
       - "5432:5432"
+    restart: unless-stopped
 
-  redis:
-    image: redis:6
+  stt_redis:
+    image: redis:6.2.7-alpine
+    container_name: stt_redis
     volumes:
       - redis_data:/data
     ports:
       - "6379:6379"
+    restart: unless-stopped
 
-  celery:
+  stt_celery:
     build: 
       context: ./speach_text
       dockerfile: Dockerfile
+    container_name: stt_celery
     command: celery -A speach_text worker --loglevel=info
     volumes:
       - ./speach_text:/app
       - media_data:/app/media
+      - model_cache:/app/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     depends_on:
-      - web
-      - redis
+      - stt_web
+      - stt_redis
     environment:
-      - DATABASE_URL=postgres://postgres:0000@db:5432/stt_db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=postgres://postgres:0000@stt_db:5432/stt_db
+      - CELERY_BROKER_URL=redis://stt_redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://stt_redis:6379/0
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    restart: unless-stopped
+    shm_size: '2gb'
 
 volumes:
   postgres_data:
   redis_data:
   media_data:
+  model_cache:
